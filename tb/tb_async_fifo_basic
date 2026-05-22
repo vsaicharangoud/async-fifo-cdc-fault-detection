@@ -1,0 +1,149 @@
+module tb_async_fifo_basic;
+
+parameter DATA_WIDTH = 32;
+parameter DEPTH      = 16;
+
+reg wr_clk;
+reg rd_clk;
+reg wr_rst_n;
+reg rd_rst_n;
+
+reg wr_en;
+reg [DATA_WIDTH-1:0] wr_data;
+wire wr_full;
+wire wr_overflow;
+
+reg rd_en;
+wire [DATA_WIDTH-1:0] rd_data;
+wire rd_empty;
+wire rd_valid;
+wire rd_underflow;
+
+// Diagnostic outputs
+wire wr_gray_error;
+wire wr_overflow_sticky;
+wire wr_pointer_stuck;
+wire rd_gray_error;
+wire rd_underflow_sticky;
+wire rd_pointer_stuck;
+
+// DUT
+
+async_fifo_top #(
+    .DATA_WIDTH(DATA_WIDTH),
+    .DEPTH(DEPTH)
+) DUT (
+
+    .wr_clk(wr_clk),
+    .wr_rst_n(wr_rst_n),
+    .wr_en(wr_en),
+    .wr_data(wr_data),
+    .wr_full(wr_full),
+    .wr_overflow(wr_overflow),
+
+    .rd_clk(rd_clk),
+    .rd_rst_n(rd_rst_n),
+    .rd_en(rd_en),
+    .rd_data(rd_data),
+    .rd_empty(rd_empty),
+    .rd_valid(rd_valid),
+    .rd_underflow(rd_underflow),
+
+    .wr_gray_error(wr_gray_error),
+    .wr_overflow_sticky(wr_overflow_sticky),
+    .wr_pointer_stuck(wr_pointer_stuck),
+
+    .rd_gray_error(rd_gray_error),
+    .rd_underflow_sticky(rd_underflow_sticky),
+    .rd_pointer_stuck(rd_pointer_stuck)
+);
+
+// Clock Generation (Asynchronous)    
+
+initial wr_clk = 0;
+always #5 wr_clk = ~wr_clk;    // 10ns period
+
+initial rd_clk = 0;
+always #7 rd_clk = ~rd_clk;    // 14ns period
+
+// Test Sequence
+
+integer i;
+
+initial begin
+    $display("Starting Basic FIFO Test");
+
+    wr_rst_n = 0;
+    rd_rst_n = 0;
+    wr_en    = 0;
+    rd_en    = 0;
+    wr_data  = 0;
+
+    #30;
+    wr_rst_n = 1;
+    rd_rst_n = 1;
+
+
+    // Write Phase
+
+    $display("Writing data...");
+    for (i = 0; i < DEPTH; i = i + 1) begin
+        @(posedge wr_clk);
+        wr_en   = 1;
+        wr_data = i;
+    end
+
+    @(posedge wr_clk);
+    wr_en = 0;
+
+
+    // Try Overflow
+
+    @(posedge wr_clk);
+    wr_en = 1;
+    wr_data = 32'hDEADBEEF;
+
+    @(posedge wr_clk);
+    wr_en = 0;
+
+
+    // Read Phase                         
+
+    $display("Reading data...");
+    
+    rd_en = 1;
+    
+    repeat (DEPTH) begin
+        @(posedge rd_clk);
+        if (rd_valid)
+            $display("Read Data = %0d", rd_data);
+    end
+    
+    rd_en = 0;
+    
+
+    // Try Underflow                      
+
+    @(posedge rd_clk);
+    rd_en = 1;
+
+    @(posedge rd_clk);
+    rd_en = 0;
+
+
+    // Print Diagnostic Status            
+
+    #50;
+    $display("Diagnostics:");
+    $display("wr_overflow_sticky = %0d", wr_overflow_sticky);
+    $display("rd_underflow_sticky = %0d", rd_underflow_sticky);
+    $display("wr_gray_error = %0d", wr_gray_error);
+    $display("rd_gray_error = %0d", rd_gray_error);
+    $display("wr_pointer_stuck = %0d", wr_pointer_stuck);
+    $display("rd_pointer_stuck = %0d", rd_pointer_stuck);
+
+    #100;
+    $finish;
+end
+
+endmodule
