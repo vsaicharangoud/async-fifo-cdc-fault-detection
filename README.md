@@ -3,6 +3,8 @@
 A parameterized asynchronous FIFO designed in **Verilog HDL** for reliable Clock Domain Crossing (CDC) communication between independent clock domains.  
 The design integrates a dedicated **runtime diagnostic unit** capable of detecting CDC-related faults such as Gray-code violations, overflow, underflow, and pointer stall conditions without affecting normal FIFO operation.
 
+![Self Diagnosing Async FIFO Block Diagram](docs/Self_Diag_Async_FIFO_Block_Diagram.png)
+
 ---
 
 # Project Overview
@@ -97,17 +99,13 @@ async-fifo-cdc-fault-detection/
 │   └── fifo_diag.v
 │
 ├── tb/
-│   ├── tb_async_fifo_basic.v
-│   └── fault_inject_tb.v
+│   └── tb_async_fifo_basic.v
 │
 ├── docs/
-│   ├── block_diagram.png
-│   ├── waveform_normal.png
+│   ├── Self_Diag_Async_FIFO_Block_Diagram.png
+│   ├── FIFO_output_labeled.png
 │   ├── waveform_fault_injection.png
 │   └── project_report.pdf
 │
-├── results/
-│
 ├── README.md
-├── LICENSE
-└── .gitignore
+└── LICENSE
